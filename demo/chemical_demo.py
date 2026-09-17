@@ -1,4 +1,4 @@
-"""Realistic fictional chemical-manufacturing demo dataset."""
+"""Realistic fictional chemical-manufacturing demo dataset (5 cust x 5 prod x 24 months)."""
 from __future__ import annotations
 import numpy as np
 import pandas as pd
@@ -20,7 +20,8 @@ def build_canonical(seed=4242):
                 mg=0.06+0.02*np.sin(yrs)+rng.normal(0,0.005); opex=rev*(0.16-0.01*yrs); b_opex=b_rev*0.155
                 rows.append(dict(date=m,customer=cust,product=prod,region="EMEA",business_unit="Chemicals",volume=units,revenue=rev,price=price,cost=cost,gross_margin=rev-cost,opex=opex,budget_revenue=b_rev,budget_volume=b_units,budget_cost=b_cost,budget_opex=b_opex,market_growth=mg))
     df=pd.DataFrame(rows).sort_values(["customer","product","date"]).reset_index(drop=True)
-    for col,pyc in [("revenue","py_revenue"),("volume","py_volume"),("cost","py_cost")]: df[pyc]=df.groupby(["customer","product"])[col].shift(12)
+    for col,pyc in [("revenue","py_revenue"),("volume","py_volume"),("cost","py_cost")]:
+        df[pyc]=df.groupby(["customer","product"])[col].shift(12)
     return df[df["date"]>="2024-01-01"].reset_index(drop=True)
 def build_raw_excel_like(seed=4242):
     c=build_canonical(seed)

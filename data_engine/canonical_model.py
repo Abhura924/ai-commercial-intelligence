@@ -2,9 +2,9 @@
 from __future__ import annotations
 import numpy as np
 import pandas as pd
-CANONICAL_COLUMNS=["date","customer","product","region","business_unit","volume","revenue","price","cost","gross_margin","opex","budget_revenue","budget_volume","budget_cost","budget_opex","py_revenue","py_volume","py_cost","market_growth"]
-TEXT_ROLES={"customer","product","region","business_unit"}
-def to_canonical(df,mapping):
+CANONICAL_COLUMNS = ["date","customer","product","region","business_unit","volume","revenue","price","cost","gross_margin","opex","budget_revenue","budget_volume","budget_cost","budget_opex","py_revenue","py_volume","py_cost","market_growth"]
+TEXT_ROLES = {"customer","product","region","business_unit"}
+def to_canonical(df, mapping):
     out=pd.DataFrame(index=df.index)
     for role in CANONICAL_COLUMNS:
         col=mapping.get(role)
@@ -18,4 +18,7 @@ def to_canonical(df,mapping):
         if out[role].isna().all(): out[role]="All"
     return out.dropna(subset=["revenue"]).reset_index(drop=True)
 def canonical_summary(df):
-    return {"rows":int(len(df)),"date_min":str(pd.to_datetime(df["date"]).min().date()) if df["date"].notna().any() else None,"date_max":str(pd.to_datetime(df["date"]).max().date()) if df["date"].notna().any() else None,"customers":int(df["customer"].nunique()) if "customer" in df else 0,"products":int(df["product"].nunique()) if "product" in df else 0,"has_budget":bool(df["budget_revenue"].notna().any()),"has_prior_year":bool(df["py_revenue"].notna().any()),"has_market":bool(df["market_growth"].notna().any())}
+    return {"rows":int(len(df)),"date_min":str(pd.to_datetime(df["date"]).min().date()) if df["date"].notna().any() else None,
+        "date_max":str(pd.to_datetime(df["date"]).max().date()) if df["date"].notna().any() else None,
+        "customers":int(df["customer"].nunique()) if "customer" in df else 0,"products":int(df["product"].nunique()) if "product" in df else 0,
+        "has_budget":bool(df["budget_revenue"].notna().any()),"has_prior_year":bool(df["py_revenue"].notna().any()),"has_market":bool(df["market_growth"].notna().any())}

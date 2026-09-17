@@ -1,7 +1,7 @@
-"""Storage layer (abstracted for cloud/SaaS). RAW never overwritten; audit kept."""
+"""Storage layer (abstracted for cloud/SaaS). RAW never overwritten; audit trail kept."""
 from __future__ import annotations
-import os,json,uuid,datetime as dt
-from dataclasses import dataclass,asdict
+import os, json, uuid, datetime as dt
+from dataclasses import dataclass, asdict
 import pandas as pd
 BASE=os.environ.get("ACI_DATA_DIR",os.path.join(os.path.dirname(__file__),"..","data"))
 RAW=os.path.join(BASE,"raw"); PROCESSED=os.path.join(BASE,"processed"); METADATA=os.path.join(BASE,"metadata")

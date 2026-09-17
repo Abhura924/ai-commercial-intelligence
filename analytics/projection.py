@@ -7,9 +7,12 @@ from . import calculation_engine as calc
 def base_year(df):
     ts = calc.timeseries(df, "M").dropna(subset=["sales"])
     if ts.empty: return {"ok": False, "reason": "No dated sales to project from."}
-    ts = ts.sort_values("period"); last12 = ts.tail(12); revenue = float(last12["sales"].sum())
-    gm, st = calc.gross_margin(df), calc.sales(df); gmp = (gm / st) if st else np.nan; ox = calc.opex(df)
-    return {"ok": True, "revenue": revenue, "gm_pct": float(gmp) if not np.isnan(gmp) else 0.35, "opex_ratio": float((ox / st) if (st and not np.isnan(ox)) else 0.15), "base_year": int(pd.Timestamp(last12["period"].iloc[-1]).year)}
+    ts = ts.sort_values("period"); last12 = ts.tail(12)
+    revenue = float(last12["sales"].sum()); gm, st = calc.gross_margin(df), calc.sales(df)
+    gm_pct = (gm / st) if st else np.nan; ox = calc.opex(df)
+    opex_ratio = (ox / st) if (st and not np.isnan(ox)) else 0.15
+    return {"ok": True, "revenue": revenue, "gm_pct": float(gm_pct) if not np.isnan(gm_pct) else 0.35,
+            "opex_ratio": float(opex_ratio), "base_year": int(pd.Timestamp(last12["period"].iloc[-1]).year)}
 
 def suggested_assumptions(df):
     ts = calc.timeseries(df, "M").dropna(subset=["sales"]); cagr = 0.08; py_g = np.nan
@@ -28,11 +31,17 @@ def project(df, years=5, revenue_cagr=0.08, gm_drift_pp=0.0, opex_efficiency_pp=
     if not b.get("ok"): return {"ok": False, "reason": b.get("reason", "Cannot project.")}
     rows = []
     for n in range(1, years + 1):
-        rev = b["revenue"] * (1 + revenue_cagr) ** n; gmp = float(np.clip(b["gm_pct"] + gm_drift_pp * n, 0.02, 0.95))
-        gmpounds = rev * gmp; ox = float(max(0.0, b["opex_ratio"] - opex_efficiency_pp * n))
-        rows.append({"year": b["base_year"] + n, "revenue": rev, "gm_pct": gmp, "gm_pounds": gmpounds, "opex_ratio": ox, "ebitda": gmpounds - rev * ox, "yoy": revenue_cagr})
+        rev = b["revenue"] * (1 + revenue_cagr) ** n
+        gmp = float(np.clip(b["gm_pct"] + gm_drift_pp * n, 0.02, 0.95)); gmpounds = rev * gmp
+        ox = float(max(0.0, b["opex_ratio"] - opex_efficiency_pp * n))
+        rows.append({"year": b["base_year"] + n, "revenue": rev, "gm_pct": gmp, "gm_pounds": gmpounds, "opex_ratio": ox, "ebitda": gmpounds - rev * ox})
     proj = pd.DataFrame(rows)
-    return {"ok": True, "base": b, "years": years, "projection": proj, "cumulative_revenue": float(proj["revenue"].sum()), "cumulative_ebitda": float(proj["ebitda"].sum()), "exit_revenue": float(proj["revenue"].iloc[-1]), "exit_gm_pct": float(proj["gm_pct"].iloc[-1]), "exit_ebitda": float(proj["ebitda"].iloc[-1])}
+    return {"ok": True, "base": b, "years": years, "projection": proj,
+            "cumulative_revenue": float(proj["revenue"].sum()), "cumulative_ebitda": float(proj["ebitda"].sum()),
+            "exit_revenue": float(proj["revenue"].iloc[-1]), "exit_gm_pct": float(proj["gm_pct"].iloc[-1]), "exit_ebitda": float(proj["ebitda"].iloc[-1])}
 
 def scenario_bundle(df, years=5, revenue_cagr=0.08, gm_drift_pp=0.0, opex_efficiency_pp=0.0, spread=0.03):
-    return {name: project(df, years, revenue_cagr + cadj, gm_drift_pp + gadj, opex_efficiency_pp) for name, cadj, gadj in [("Base", 0.0, 0.0), ("Upside", spread, 0.002), ("Downside", -spread, -0.003)]}
+    out = {}
+    for name, cadj, gadj in [("Base", 0.0, 0.0), ("Upside", +spread, +0.002), ("Downside", -spread, -0.003)]:
+        out[name] = project(df, years, revenue_cagr + cadj, gm_drift_pp + gadj, opex_efficiency_pp)
+    return out

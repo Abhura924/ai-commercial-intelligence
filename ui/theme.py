@@ -35,6 +35,7 @@ def inject_css():
     section[data-testid="stSidebar"] .stAlert p {{ color:#C7CEDD !important; font-size:12px; }}
     .mer-topbar {{ display:flex; align-items:center; gap:12px; margin-bottom:14px; }}
     .mer-pill {{ display:inline-block; background:#E4EEEC; color:{TEAL} !important; font-size:12px; padding:5px 13px; border-radius:16px; font-weight:600; }}
+    .mer-pill-amber {{ background:#F3EBD9; color:{AMBER} !important; }}
     .mer-kpi {{ background:#FFF; border:1px solid {LINE}; border-radius:6px; padding:15px 17px; height:100%; }}
     .mer-kpi-label {{ font-size:12.5px; color:{MUTED}; margin-bottom:7px; letter-spacing:.04em; text-transform:uppercase; }}
     .mer-kpi-value {{ font-family:'IBM Plex Mono',monospace; font-size:24px; font-weight:500; color:{INK}; line-height:1.1; }}
@@ -78,13 +79,10 @@ def panel_header(title, note=None):
 
 
 def fmt_m(v):
-    """Adaptive currency: £m for ≥£1m, £k for ≥£1k, else £ — so small deltas aren't lost."""
     if v is None or (isinstance(v, float) and np.isnan(v)): return "—"
     a = abs(v); sign = "-" if v < 0 else ""
-    if a >= 1e6:
-        return f"{sign}£{a/1e6:.1f}m"
-    if a >= 1e3:
-        return f"{sign}£{a/1e3:.0f}k"
+    if a >= 1e6: return f"{sign}£{a/1e6:.1f}m"
+    if a >= 1e3: return f"{sign}£{a/1e3:.0f}k"
     return f"{sign}£{a:,.0f}"
 
 def fmt_signed_m(v):

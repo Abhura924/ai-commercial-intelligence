@@ -1,16 +1,18 @@
 # Architecture
 
-## Scenario flow (redesign)
-Natural language → ai/scenario_agent (Scenario Intent Parser: LLM or rule-based) →
-Structured Scenario Object (levers + opex + market) → analytics/scenarios
-(Deterministic Scenario Engine, reuses calculation_engine) → Scenario Results + Bridges
-→ ai/scenario_agent (AI Explanation, deltas only). No second calculation engine.
+## Unified agent (v0.5)
+Natural language → ai/agent_router.classify_intent (LLM or rule-based) → dispatch:
+  • scenario  → ai/scenario_agent (levers + horizon) → analytics/forecast.forecast_frame
+                (if horizon) → analytics/scenarios (deterministic) → reconciling bridges
+  • dashboard → ai/dashboard_builder.build_spec → ui renders blocks from the engine
+  • question  → ai/analyst.answer_question (grounded)
+The LLM only classifies/extracts/selects — never calculates. No second calc engine.
 
-## Layers (modular; UI decoupled from logic)
+## Layers
 Ingestion (ui/pipeline) → RAW storage (data_engine/storage, immutable + audit) →
 Semantic mapping → Canonical model → Data quality → Deterministic calc engine →
 Bridges/Attribution/Forecast/Budget/Projection/Scenarios (analytics/*) →
-AI (ai/analyst, ai/scenario_agent via ai/llm_provider, vendor-neutral) → UI.
+AI (analyst, scenario_agent, dashboard_builder, agent_router via llm_provider) → UI.
 
 ## Canonical model (star schema)
 FACT_SALES: date, customer, product, region, business_unit, volume, revenue, price,
@@ -20,12 +22,6 @@ cost, gross_margin, opex, budget_*, py_*, market_growth. Uploads mapped TO this.
 data/raw (immutable), data/processed (canonical), data/metadata (json + audit_log.jsonl).
 storage.py is a thin interface — swap for Postgres/Azure SQL/Fabric/Data Lake later.
 
-## Tech
-Python+pandas/numpy (transparent, testable engine) · Streamlit (fast board-grade UI,
-replaceable by React/FastAPI without touching analytics/) · Plotly · Parquet · LLM
-abstraction (Anthropic/Azure OpenAI/OpenAI).
-
 ## Structure
-analytics/ (calculation_engine, bridges, attribution, budget, forecast, projection,
-scenarios) · data_engine/ · ai/ (analyst, scenario_agent, llm_provider) · ui/ · demo/ ·
-tests/ · docs/ · data/
+analytics/ · data_engine/ · ai/ (analyst, scenario_agent, dashboard_builder,
+agent_router, llm_provider) · ui/ · demo/ · tests/ · docs/ · data/

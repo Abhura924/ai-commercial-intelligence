@@ -1,4 +1,4 @@
-"""LLM Provider Abstraction — vendor-neutral."""
+"""LLM Provider Abstraction — vendor-neutral (Anthropic / Azure OpenAI / OpenAI)."""
 from __future__ import annotations
 import os
 from abc import ABC, abstractmethod
